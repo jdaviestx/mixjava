@@ -13,7 +13,7 @@ class MixInst	{
 	private int a;
 
 	/**
-	 * For testing.
+	 * Construct a MIX instruction from pieces (e.g. from the assembler).
 	 */
 	public MixInst(MixOpCode c, int i, int L, int R, int a)	{
 		this.c = c.ordinal();
@@ -211,7 +211,7 @@ class MixInst	{
 							" for instruction code " + c + " (shift); expected 0-5");
 				}
 			case MOVE:
-				vm.moveWords(a, f);
+				vm.moveWords(a, i, f);
 				break;
 			case LDA:
 			case LD1:

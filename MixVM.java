@@ -32,6 +32,10 @@ public class MixVM	{
 		// TODO load a program from a file
 	}
 
+	public MixVM(int[] mem)	{
+		System.arraycopy(mem, 0, this.mem, 0, mem.length);
+	}
+
 	/**
 	 * For bootstrapping a program only.
 	 */
@@ -245,7 +249,15 @@ System.out.println("masked = " + (reg[r] & mask));
 	 * If rI1 = 1001, 1000->1001, 1001->1002, 1002->1003; the same word contents(1000) into
 	 * three places.
 	 */
-	public void moveWords(int m, int f)	{
+	public void moveWords(int loc, int i, int f)	{
+		loc += (i > 0) ? reg[i + 1] : 0;
+		// Can't use arraycopy here, since that doesn't preserve the original
+		// MIX specification.  Have to copy one word at a time.
+		while (f-- > 0)	{
+			mem[reg[1]] = mem[loc];
+			loc++;
+			reg[1]++;
+		}
 	}
 
 	/**

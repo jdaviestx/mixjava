@@ -10,6 +10,32 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
+ * A standard specification for a MIX instruction.
+ */
+class MixInstSpec	{
+	private int c;
+	private int time;
+	private int L;
+	private int R;
+
+	/**
+	 * Record the standard settings for a MIX instruction, if the
+	 * operation isn't overridden.
+	 */
+	public MixInstSpec(int c, int time, int L, int R)	{
+		this.c = c;
+		this.time = time;
+		this.L = L;
+		this.R = R;
+	}
+
+	public int getC() { return c; }
+	public int getTime() { return time; }
+	public int getL() { return L; }
+	public int getR() { return R; }
+}
+
+/**
  * Assemble a plaintext file into an executable MIX program (executable by {@link MixVM}).
  */
 public class MixAsm	{
@@ -17,98 +43,98 @@ public class MixAsm	{
 	 * Static mapping of opcodes to code values; this isn't a simple list, since multiple
 	 * opcodes map onto a single value (like JAP/JP, ENTA/INCA).
 	 */
-	private static Map<String, Integer> opcodes = new HashMap<String, Integer>();
+	private static Map<String, MixInstSpec> opcodes = new HashMap<String, MixInstSpec>();
 
 	static	{
 		// C	t	 L	R
-		opcodes.put("NOP", 0);	// 1  0  0
-		opcodes.put("ADD", 1);	// 2  0  5
-		opcodes.put("SUB", 2);	// 2  0  5
-		opcodes.put("MUL", 3);	// 10 0  5
-		opcodes.put("DIV", 4);	// 12 0  5
-		opcodes.put("NUM", 5);	// 10	0  0
-		opcodes.put("CHAR", 5);	// 10 0  1
-		opcodes.put("HLT", 5);	// 10 0  2
-		opcodes.put("SLA", 6);	// 2  0  0
-		opcodes.put("SRA", 6);	// 2  0  1
-		opcodes.put("SLAX", 6);	// 2  0  2
-		opcodes.put("SRAX", 6);	// 2  0  3
-		opcodes.put("SLC", 6);	// 2  0  4
-		opcodes.put("SRC", 6);	// 2  0  5
-		opcodes.put("MOVE", 7);	// 1 + 2F	0 1
-		opcodes.put("LDA", 8);	// 2	0  5
-		opcodes.put("LD1", 9);	// 2	0  5
-		opcodes.put("LD2", 10);	// 2	0  5
-		opcodes.put("LD3", 11);	// 2	0  5
-		opcodes.put("LD4", 12);	// 2	0  5
-		opcodes.put("LD5", 13);	// 2	0  5
-		opcodes.put("LD6", 14);	// 2	0  5
-		opcodes.put("LDX", 15);	// 2	0  5
-		opcodes.put("LDAN", 16);	// 2	0  5
-		opcodes.put("LD1N", 17);	// 2	0  5
-		opcodes.put("LD2N", 18);	// 2	0  5
-		opcodes.put("LD3N", 19);	// 2	0  5
-		opcodes.put("LD4N", 20);	// 2	0  5
-		opcodes.put("LD5N", 21);	// 2	0  5
-		opcodes.put("LD6N", 22);	// 2	0  5
-		opcodes.put("LDXN", 23);	// 2	0  5
-		opcodes.put("STA", 24);	// 2	0  5
-		opcodes.put("ST1", 25);	// 2	0  5
-		opcodes.put("ST2", 26);	// 2	0  5
-		opcodes.put("ST3", 27);	// 2	0  5
-		opcodes.put("ST4", 28);	// 2	0  5
-		opcodes.put("ST5", 29);	// 2	0  5
-		opcodes.put("ST6", 30);	// 2	0  5
-		opcodes.put("STX", 31);	// 2	0  5
-		opcodes.put("STJ", 32);	// 2  0  2
-		opcodes.put("STZ", 33); // 2  0  5
-		opcodes.put("JBUS", 34);	// 1	0  0
-		opcodes.put("IOC", 35);		// 1+T  0  0
-		opcodes.put("IN", 36);		// 1+T  0  0
-		opcodes.put("OUT", 37);	 // 1+T  0  0
-		opcodes.put("JRED", 38);	// 1  0  0
-		opcodes.put("JMP", 39);		// 1  0  0
-		opcodes.put("JSJ", 39);		// 1  0  1
-		opcodes.put("JOV", 39);	  // 1  0  2
-		opcodes.put("JNOV", 39);	// 1  0  3
-		opcodes.put("JAP", 40);
-		opcodes.put("J1P", 41);
-		opcodes.put("J2P", 42);
-		opcodes.put("J3P", 43);
-		opcodes.put("J4P", 44);
-		opcodes.put("J5P", 45);
-		opcodes.put("J6P", 46);
-		opcodes.put("JXP", 47);
-		opcodes.put("INCA", 48);
-		opcodes.put("INC1", 49);
-		opcodes.put("INC2", 50);
-		opcodes.put("INC3", 51);
-		opcodes.put("INC4", 52);
-		opcodes.put("INC5", 53);
-		opcodes.put("INC6", 54);
-		opcodes.put("INCX", 55);
-		opcodes.put("ENTA", 48);
-		opcodes.put("ENT1", 49);
-		opcodes.put("ENT2", 50);
-		opcodes.put("ENT3", 51);
-		opcodes.put("ENT4", 52);
-		opcodes.put("ENT5", 53);
-		opcodes.put("ENT6", 54);
-		opcodes.put("ENTX", 55);
-		opcodes.put("CMPA", 56);
-		opcodes.put("CMP1", 57);
-		opcodes.put("CMP2", 58);
-		opcodes.put("CMP3", 59);
-		opcodes.put("CMP4", 60);
-		opcodes.put("CMP5", 61);
-		opcodes.put("CMP6", 62);
-		opcodes.put("CMPX", 63);
+		opcodes.put("NOP", new MixInstSpec(0, 1, 0, 0));	// 1  0  0
+		opcodes.put("ADD", new MixInstSpec(1, 2, 0, 5));	// 2  0  5
+		opcodes.put("SUB", new MixInstSpec(2, 2, 0, 5));	// 2  0  5
+		opcodes.put("MUL", new MixInstSpec(3, 10, 0, 5));	// 10 0  5
+		opcodes.put("DIV", new MixInstSpec(4, 12, 0, 5));	// 12 0  5
+		opcodes.put("NUM", new MixInstSpec(5, 10, 0, 0));	// 10	0  0
+		opcodes.put("CHAR", new MixInstSpec(5, 10, 0, 1));	// 10 0  1
+		opcodes.put("HLT", new MixInstSpec(5, 10, 0, 2));	// 10 0  2
+		opcodes.put("SLA", new MixInstSpec(6, 2, 0, 0));	// 2  0  0
+		opcodes.put("SRA", new MixInstSpec(6, 2, 0, 1));	// 2  0  1
+		opcodes.put("SLAX", new MixInstSpec(6, 2, 0, 2));	// 2  0  2
+		opcodes.put("SRAX", new MixInstSpec(6, 2, 0, 3));	// 2  0  3
+		opcodes.put("SLC", new MixInstSpec(6, 2, 0, 4));	// 2  0  4
+		opcodes.put("SRC", new MixInstSpec(6, 2, 0, 5));	// 2  0  5
+		opcodes.put("MOVE", new MixInstSpec(7, 1, 0, 1));	// + 2*F
+		opcodes.put("LDA", new MixInstSpec(8, 2, 0, 5));	// 2	0  5
+		opcodes.put("LD1", new MixInstSpec(9, 2, 0, 5));	// 2	0  5
+		opcodes.put("LD2", new MixInstSpec(10, 2, 0, 5));	// 2	0  5
+		opcodes.put("LD3", new MixInstSpec(11, 2, 0, 5));	// 2	0  5
+		opcodes.put("LD4", new MixInstSpec(12, 2, 0, 5));	// 2	0  5
+		opcodes.put("LD5", new MixInstSpec(13, 2, 0, 5));	// 2	0  5
+		opcodes.put("LD6", new MixInstSpec(14, 2, 0, 5));	// 2	0  5
+		opcodes.put("LDX", new MixInstSpec(15, 2, 0, 5));	// 2	0  5
+		opcodes.put("LDAN", new MixInstSpec(16, 2, 0, 5));	// 2	0  5
+		opcodes.put("LD1N", new MixInstSpec(17, 2, 0, 5));	// 2	0  5
+		opcodes.put("LD2N", new MixInstSpec(18, 2, 0, 5));	// 2	0  5
+		opcodes.put("LD3N", new MixInstSpec(19, 2, 0, 5));	// 2	0  5
+		opcodes.put("LD4N", new MixInstSpec(20, 2, 0, 5));	// 2	0  5
+		opcodes.put("LD5N", new MixInstSpec(21, 2, 0, 5));	// 2	0  5
+		opcodes.put("LD6N", new MixInstSpec(22, 2, 0, 5));	// 2	0  5
+		opcodes.put("LDXN", new MixInstSpec(23, 2, 0, 5));	// 2	0  5
+		opcodes.put("STA", new MixInstSpec(24, 2, 0, 5));	// 2	0  5
+		opcodes.put("ST1", new MixInstSpec(25, 2, 0, 5));	// 2	0  5
+		opcodes.put("ST2", new MixInstSpec(26, 2, 0, 5));	// 2	0  5
+		opcodes.put("ST3", new MixInstSpec(27, 2, 0, 5));	// 2	0  5
+		opcodes.put("ST4", new MixInstSpec(28, 2, 0, 5));	// 2	0  5
+		opcodes.put("ST5", new MixInstSpec(29, 2, 0, 5));	// 2	0  5
+		opcodes.put("ST6", new MixInstSpec(30, 2, 0, 5));	// 2	0  5
+		opcodes.put("STX", new MixInstSpec(31, 2, 0, 5));	// 2	0  5
+		opcodes.put("STJ", new MixInstSpec(32, 2, 0, 5));	// 2  0  2
+		opcodes.put("STZ", new MixInstSpec(33, 2, 0, 5)); // 2  0  5
+		opcodes.put("JBUS", new MixInstSpec(34, 1, 0, 0));	// 
+		opcodes.put("IOC", new MixInstSpec(35, 1, 0, 0));		// + T (device busy)
+		opcodes.put("IN", new MixInstSpec(36, 1, 0, 0));		// + T (device busy)
+		opcodes.put("OUT", new MixInstSpec(37, 1, 0, 0));	 // + T (device busy)
+		opcodes.put("JRED", new MixInstSpec(38, 1, 0, 0));	// 1  0  0
+		opcodes.put("JMP", new MixInstSpec(39, 1, 0, 0));		// 1  0  0
+		opcodes.put("JSJ", new MixInstSpec(39, 1, 0, 1));		// 1  0  1
+		opcodes.put("JOV", new MixInstSpec(39, 1, 0, 2));	  // 1  0  2
+		opcodes.put("JNOV", new MixInstSpec(39, 1, 0, 3));	// 1  0  3
+		opcodes.put("JAP", new MixInstSpec(40, 0, 0, 0));
+		opcodes.put("J1P", new MixInstSpec(41, 0, 0, 0));
+		opcodes.put("J2P", new MixInstSpec(42, 0, 0, 0));
+		opcodes.put("J3P", new MixInstSpec(43, 0, 0, 0));
+		opcodes.put("J4P", new MixInstSpec(44, 0, 0, 0));
+		opcodes.put("J5P", new MixInstSpec(45, 0, 0, 0));
+		opcodes.put("J6P", new MixInstSpec(46, 0, 0, 0));
+		opcodes.put("JXP", new MixInstSpec(47, 0, 0, 0));
+		opcodes.put("INCA", new MixInstSpec(48, 0, 0, 0));
+		opcodes.put("INC1", new MixInstSpec(49, 0, 0, 0));
+		opcodes.put("INC2", new MixInstSpec(50, 0, 0, 0));
+		opcodes.put("INC3", new MixInstSpec(51, 0, 0, 0));
+		opcodes.put("INC4", new MixInstSpec(52, 0, 0, 0));
+		opcodes.put("INC5", new MixInstSpec(53, 0, 0, 0));
+		opcodes.put("INC6", new MixInstSpec(54, 0, 0, 0));
+		opcodes.put("INCX", new MixInstSpec(55, 0, 0, 0));
+		opcodes.put("ENTA", new MixInstSpec(48, 1, 0, 2));
+		opcodes.put("ENT1", new MixInstSpec(49, 1, 0, 2));
+		opcodes.put("ENT2", new MixInstSpec(50, 1, 0, 2));
+		opcodes.put("ENT3", new MixInstSpec(51, 1, 0, 2));
+		opcodes.put("ENT4", new MixInstSpec(52, 1, 0, 2));
+		opcodes.put("ENT5", new MixInstSpec(53, 1, 0, 2));
+		opcodes.put("ENT6", new MixInstSpec(54, 1, 0, 2));
+		opcodes.put("ENTX", new MixInstSpec(55, 1, 0, 2));
+		opcodes.put("CMPA", new MixInstSpec(56, 0, 0, 0));
+		opcodes.put("CMP1", new MixInstSpec(57, 0, 0, 0));
+		opcodes.put("CMP2", new MixInstSpec(58, 0, 0, 0));
+		opcodes.put("CMP3", new MixInstSpec(59, 0, 0, 0));
+		opcodes.put("CMP4", new MixInstSpec(60, 0, 0, 0));
+		opcodes.put("CMP5", new MixInstSpec(61, 0, 0, 0));
+		opcodes.put("CMP6", new MixInstSpec(62, 0, 0, 0));
+		opcodes.put("CMPX", new MixInstSpec(63, 0, 0, 0));
 		// psuedo-operations; map these all to invalid opcode values
-		opcodes.put("EQU", 64);
-		opcodes.put("CON", 65);
-		opcodes.put("ALF", 66);
-		opcodes.put("ORIG", 67);
-		opcodes.put("END", 68);
+		opcodes.put("EQU", new MixInstSpec(64, 0, 0, 0));
+		opcodes.put("CON", new MixInstSpec(65, 0, 0, 0));
+		opcodes.put("ALF", new MixInstSpec(66, 0, 0, 0));
+		opcodes.put("ORIG", new MixInstSpec(67, 0, 0, 0));
+		opcodes.put("END", new MixInstSpec(68, 0, 0, 0));
 	};
 
 	private int pc;
@@ -116,7 +142,7 @@ public class MixAsm	{
 
 	// Write directly into this memory area; the output routine will compress this by
 	// removing contiguous regions of zeros.
-	private int memory[] = new int[4000];
+	private int mem[] = new int[4000];
 
 	public MixAsm()	{
 		this.pc = 0;	// always start assembling at 0 by default, although most programs change this.
@@ -162,7 +188,8 @@ System.out.println(label + ":" + opcode + ":" + address);
 		if (opcodes.get(opcode) == null)	{
 			throw new SyntaxException("Unrecognized opcode '" + opcode + "'");
 		}
-		c = opcodes.get(opcode);
+		MixInstSpec spec = opcodes.get(opcode);
+		c = spec.getC();
 		// The really hard part here is interpreting the address part of the instruction
 
 		// location[,index][(L[:R])]
@@ -176,9 +203,10 @@ System.out.println(label + ":" + opcode + ":" + address);
 			StringTokenizer addrParser = new StringTokenizer(address, ",():", true);
 
 			location = addrParser.nextToken();
+System.out.println(location);
 			if (addrParser.hasMoreTokens())	{
 				String sep = addrParser.nextToken();
-				if (sep.equals(','))	{
+				if (sep.equals(","))	{
 					index = addrParser.nextToken();
 					if (addrParser.hasMoreTokens())	{
 						sep = addrParser.nextToken();
@@ -186,14 +214,14 @@ System.out.println(label + ":" + opcode + ":" + address);
 						sep = null;
 					}
 				}
-				if (sep != null && sep.equals('('))	{	// must be a , or a (
+				if (sep != null && sep.equals("("))	{	// must be a , or a (
 					L = addrParser.nextToken();
 					if (!addrParser.hasMoreTokens())	{
 						throw new SyntaxException("Unexpected end of expression in '" +
 							address + "'");
 					}
 					sep = addrParser.nextToken();
-					if (sep.equals(':'))	{
+					if (sep.equals(":"))	{
 						R = addrParser.nextToken();
 						if (!addrParser.hasMoreTokens())	{
 							throw new SyntaxException("Unexpected end of expression in '" +
@@ -201,7 +229,7 @@ System.out.println(label + ":" + opcode + ":" + address);
 						}
 						sep = addrParser.nextToken();
 					}
-					if (!sep.equals(')'))	{
+					if (!sep.equals(")"))	{
 						throw new SyntaxException("Expected ')', got '" + sep + "'");
 					}
 				} else	{
@@ -212,16 +240,20 @@ System.out.println(label + ":" + opcode + ":" + address);
 
 		int ilocation = 0;
 		int iindex = 0;
-		int iL = 0;
-		int iR = 5;
+		int iL = spec.getL();
+		int iR = spec.getR();
 
-		try	{
-			ilocation = Integer.parseInt(location);
-		} catch (NumberFormatException e)	{
-			if (symbolTable.get(location) != null)	{
-				ilocation = symbolTable.get(location);
-			} else	{
-				// TODO record a forward reference
+		if ("*".equals(location))	{
+			ilocation = this.pc;
+		} else	{
+			try	{
+				ilocation = Integer.parseInt(location);
+			} catch (NumberFormatException e)	{
+				if (symbolTable.get(location) != null)	{
+					ilocation = symbolTable.get(location);
+				} else	{
+					// TODO record a forward reference
+				}
 			}
 		}
 
@@ -258,23 +290,29 @@ System.out.println(label + ":" + opcode + ":" + address);
 			// Handle psuedo-operations: e.g. assembler instructions
 			if ("ORIG".equals(opcode))	{
 				pc = ilocation;
+			} else if ("CON".equals(opcode))	{
+				mem[pc] = ilocation;
+				pc++;
+			} else if ("EQU".equals(opcode))	{
+				symbolTable.put(label, ilocation);
 			}
 		} else	{
 			// Actually assemble something
 			// TODO correct F-spec defaults for non-load/store instructions.
 
-			MixInst inst = new MixInst(MixOpCode.values()[c], ilocation, iindex,
-				iL, iR);
+			MixInst inst = new MixInst(MixOpCode.values()[c], iindex,
+				iL, iR, ilocation);
 System.out.println(pc + ": " + inst.toString());
-			memory[pc] = inst.pack();
+			mem[pc] = inst.pack();
 			pc++;
 		}
 	}
 
-	public void assemble(BufferedReader in) throws IOException	{
+	public boolean assemble(BufferedReader in) throws IOException	{
 		int lineCounter = 0;	// different than program counter
 		String line;
 		System.out.println("label\topcode\taddress");
+		boolean succeeded = true;
 		while ((line = in.readLine()) != null)	{
 			lineCounter++;
 			if ((line.charAt(0) == '*') || line.trim().length() == 0)	{
@@ -286,8 +324,24 @@ System.out.println(pc + ": " + inst.toString());
 			} catch (SyntaxException e)	{
 				System.out.print("At line " + lineCounter + ", input '" +  line + "': ");
 				e.printStackTrace();
+				succeeded = false;
 			}
 		}
+
+		return succeeded;
+	}
+
+	/**
+	 * Create a VM, run the assembled program and output the VM
+	 * status.  For testing only.
+	 */
+	public void run() throws MixException	{
+		MixVM vm = new MixVM(this.mem);
+		vm.dumpState();
+		vm.showMemory(2000,2010);
+		vm.run(symbolTable.get("START"));
+		vm.dumpState();
+		vm.showMemory(2000,2010);
 	}
 	
 	public static void main(String[] args) throws IOException	{
@@ -297,6 +351,12 @@ System.out.println(pc + ": " + inst.toString());
 		}
 
 		MixAsm assembler = new MixAsm();
-		assembler.assemble(new BufferedReader(new FileReader(args[0])));
+		if (assembler.assemble(new BufferedReader(new FileReader(args[0]))))	{
+			try	{
+				assembler.run();
+			} catch (MixException e)	{
+				e.printStackTrace();
+			}
+		}
 	}
 }
