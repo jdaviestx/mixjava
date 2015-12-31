@@ -8,8 +8,6 @@ class MixInst	{
 	private int c;
 	private int i;
 	private int f;
-	private int L;	// f = (8*L) + R
-	private int R;  // f = (8*L) + R;
 	private int a;
 
 	/**
@@ -19,8 +17,6 @@ class MixInst	{
 		this.c = c.ordinal();
 		this.i = i;
 		this.f = (8 * L) + R;
-		this.L = L;
-		this.R = R;
 		this.a = a;
 	}
 
@@ -62,20 +58,6 @@ class MixInst	{
 		if (i > 6)	{
 			throw new IllegalInstruction("Index modifier " + i +
 				" out of range");
-		}
-
-		// TODO add a table of valid f specifications.
-		L = f / 8;
-		R = f % 8;
-
-		if (R > 5)	{
-			throw new FieldError("F-specification " + f + " yields invalid " +
-				"R-value of " + R);
-		}
-
-		if (L > R)	{
-			throw new FieldError("F-specification " + f + " yields invalid " +
-				"L-value of: " + L + " (> " + R + ")");
 		}
 	}
 
@@ -164,6 +146,19 @@ class MixInst	{
 																				  IllegalInstruction,
 																					NotImplemented,
 																				  FieldError	{
+		int L = f / 8;
+		int R = f % 8;
+
+		if (R > 5 && c != 39)	{	// JMP allows this
+			throw new FieldError("F-specification " + f + " yields invalid " +
+				"R-value of " + R);
+		}
+
+		if (L > R)	{
+			throw new FieldError("F-specification " + f + " yields invalid " +
+				"L-value of: " + L + " (> " + R + ")");
+		}
+
 		// 1.3.1, p. 127: This indexing takes place on _every_ instruction.
 		MixOpCode op = MixOpCode.values()[c];
 		switch (op)	{
@@ -262,6 +257,9 @@ class MixInst	{
 			case JRED: 
 				throw new NotImplemented(c);
 			case JMP: 
+				vm.conditionalJump(f, a);
+				break;
+				/*
 				// p. 134: When a jump takes place, the J-register is set to the
 				// address of the next instruction (the address of the instruction that
 				// would have been next if we hadn't jumped).
@@ -281,6 +279,8 @@ class MixInst	{
 						throw new FieldError("Invalid F-specification " + f +
 							" for instruction code " + c + " (jump); expected 0-9");
 				}
+				*/
+
 			case JAP: 
 			case J1P:
 			case J2P: 
@@ -312,16 +312,20 @@ class MixInst	{
 				switch (f)	{
 					case 0:
 						// INCn
-						throw new NotImplemented(c);
+						// XXX can INC & DEC be indexed?
+						vm.incRegister(a, c - MixOpCode.INCA.ordinal());
+						break;
 					case 1:
 						// DECn
-						throw new NotImplemented(c);
+						vm.incRegister(a * -1, c - MixOpCode.INCA.ordinal());
+						break;
 					case 2:
 						// ENTA instructions
 						vm.setRegister(a, c - MixOpCode.INCA.ordinal(), i, false);
 						break;
 					case 3:
-						vm.setRegister(a, c - MixOpCode.INCA.ordinal(), i, true);
+						vm.setRegister(a * -1, c - MixOpCode.INCA.ordinal(), i, true);
+						break;
 					default:
 						throw new FieldError("Invalid F-specification " + f +
 							" for instruction code " + c + "; expected 0-3");

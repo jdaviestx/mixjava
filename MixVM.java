@@ -61,6 +61,10 @@ public class MixVM	{
 		}
 	}
 
+	public void incRegister(int amount, int r)	{
+		reg[r] += amount;
+	}
+
 	/**
 	 * p. 133: rA/rX: Overflow is possible, and it is treated just as in ADD
 	 * ri: overflow must not occur; if M + rIi doesn't fit into two bytes, the
@@ -231,6 +235,7 @@ System.out.println("masked = " + (reg[r] & mask));
 	 */
 	public void compare(int loc, int r, int i, int L, int R)	{
 		loc += (i > 0) ? reg[i + 1] : 0;
+		// TODO partial field comparisons
 		if (mem[loc] < reg[r])	{
 			compi = -1;
 		} else if (mem[loc] > reg[r])	{
@@ -292,6 +297,68 @@ System.out.println("masked = " + (reg[r] & mask));
 	 */
 	public int getRegister(int r)	{
 		return reg[r];
+	}
+
+	/**
+	 * p. 134: When a jump takes place, the J-register is set to the
+	 * address of the next instruction (the address of the instruction that
+	 * would have been next if we hadn't jumped).
+	 */
+	public void conditionalJump(int f, int loc) throws FieldError	{
+		if (f != 1)	{
+			rJ = this.pc + 1;
+		}
+		switch (f)	{
+			case 0: // JMP: unconditional
+			case 1: // JSJ: jump, save J; doen't update rJ
+				this.pc = loc;
+				break;
+			case 2: // JOV: if overflow toggle is on, it is turned off and a jump occurs; otherwise nothing happens
+				if (ovtog)	{
+					this.ovtog = false;
+					this.pc = loc;
+				}
+				break;
+			case 3: // JNOV: if the overflow toggle is off, a JMP occurs; otherwise it is turned off
+				if (!ovtog)	{
+					this.pc = loc;
+				}
+				this.ovtog = false;
+				break;
+			case 4:	// JL
+				if (compi < 0)	{
+					this.pc = loc;
+				}
+				break;
+			case 5: // JE
+				if (compi == 0)	{
+					this.pc = loc;
+				}
+				break;
+			case 6: // JG
+				if (compi > 0)	{
+					this.pc = loc;
+				}
+				break;
+			case 7: // JGE
+				if (compi >= 0)	{
+					this.pc = loc;
+				}
+				break;
+			case 8: // JNE
+				if (compi != 0)	{
+					this.pc = loc;
+				}
+				break;
+			case 9: // JLE: Jump if the comparison indicator is set.  The comparison indicator is not changed by these instructions.
+				if (compi <= 0)	{
+					this.pc = loc;
+				}
+				break;
+			default:
+				throw new FieldError("Invalid F-specification " + f +
+					" for instruction code 39 (jump); expected 0-9");
+		}
 	}
 
 	/**
