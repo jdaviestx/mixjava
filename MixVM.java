@@ -1,51 +1,5 @@
-class MixException extends Exception	{
-	private int location;
-
-	public MixException(String msg)	{
-		super(msg);
-	}
-
-	public void attachLocation(int location)	{
-		this.location = location;
-	}
-
-	public int getLocation()	{
-		return location;
-	}
-}
-
-class IllegalInstruction extends MixException	{
-	private String msg;
-
-	public IllegalInstruction(String msg)	{
-		super(msg);
-		this.msg = msg;
-	}
-}
-
-class MemoryLocationError extends MixException	{
-	private String msg;
-
-	public MemoryLocationError(String msg)	{
-		super(msg);
-		this.msg = msg;
-	}
-}
-
-class NotImplemented extends MixException	{
-	public NotImplemented(int code)	{
-		super("Valid, but unimplemented op-code " + code);
-	}
-}
-
-class FieldError extends MixException	{
-	private String msg;
-
-	public FieldError(String msg)	{
-		super(msg);
-		this.msg = msg;
-	}
-}
+ // character codes:
+ // (space)ABCDEFGHI(delta)JKLMNOPQR(sigma)(pi)STUVWXYZ0123456789.,()+-*/=$<>@;:'
 
 /**
  * <table>
@@ -58,8 +12,6 @@ class FieldError extends MixException	{
  * <tr><td>19</td><td>Typewriter terminal</td><th>14 words</th></tr>
  * <tr><td>20</td><td>Paper tape</td><th>14 words</th></tr>
  * </table>
- * character codes:
- * (space)ABCDEFGHI(delta)JKLMNOPQR(sigma)(pi)STUVWXYZ0123456789.,()+-*/=$<>@;:'
  */
 public class MixVM	{
 	private static final int SIGN_POS = (0x01 << 31);

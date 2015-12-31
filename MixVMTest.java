@@ -67,6 +67,7 @@ public class MixVMTest	{
 		}
 
 		// Some specific examples from TAOCP 1.3.1
+		/*
 		vm.loadMemory(2000, new int[] {-80 << 24 | 3 << 12 | 5 << 6 | 4});
 		assertValue(new MixInst(MixOpCode.LDA, 0, 0, 5, 2000), {-80 << 24 | 3 << 12 | 5 << 6 | 4});
 		assertValue(new MixInst(MixOpCode.LDA, 0, 1, 5, 2000), {80 << 24 | 3 << 12 | 5 << 6 | 4});
@@ -75,6 +76,7 @@ public class MixVMTest	{
 		assertValue(new MixInst(MixOpCode.LDA, 0, 4, 4, 2000), {5});
 		assertValue(new MixInst(MixOpCode.LDA, 0, 0, 0, 2000), {-0});
 		assertValue(new MixInst(MixOpCode.LDA, 0, 1, 1, 2000), {1});	// "unknown", but I know
+		*/
 	}
 
 	public static void testStoring() throws Exception	{
@@ -88,6 +90,7 @@ public class MixVMTest	{
 		vm.showMemory(2000,2000);
 
 		// From TAOCP, p. 130
+		/*
 		vm.loadMemory(2000, new int[] {-1 << 24 | 2 << 18 | 3 << 12 | 4 << 6 | 5});
 		vm.loadRegister(0, new int[] {6 << 24 | 7 << 18 | 8 << 12 | 9 << 6 | 0});
 		assertMemory(new MixInst(MixOpCode.STA, 0, 0, 5, 2000), {6 << 24 | 7 << 18 | 8 << 12 | 9 << 6 | 0});
@@ -96,6 +99,7 @@ public class MixVMTest	{
 		assertMemory(new MixInst(MixOpCode.STA, 0, 2, 2, 2000), {-1 << 24 | 0 << 18 | 3 << 12 | 4 << 6 | 5});
 		assertMemory(new MixInst(MixOpCode.STA, 0, 2, 3, 2000), {-1 << 24 | 9 << 18 | 0 << 12 | 4 << 6 | 5});
 		assertMemory(new MixInst(MixOpCode.STA, 0, 0, 1, 2000), {0 << 24 | 2 << 18 | 3 << 12 | 4 << 6 | 5});
+		*/
 	}
 
 	public static void testAdd()	{

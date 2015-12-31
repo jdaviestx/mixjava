@@ -120,7 +120,7 @@ public class MixAsm	{
 
 	// Write directly into this memory area; the output routine will compress this by
 	// removing contiguous regions of zeros.
-	private int memory[4000];
+	private int memory[] = new int[4000];
 
 	public MixAsm()	{
 		this.pc = 0;	// always start assembling at 0 by default, although most programs change this.
@@ -142,10 +142,10 @@ public class MixAsm	{
 		String label = null;
 		String opcode;
 		String address = null;
-		byte c;
-		byte f;
-		byte i;
-		short a;
+		int c;
+		int f;
+		int i;
+		int a;
 
 		if (line.charAt(0) != ' ' && line.charAt(0) != '\t')	{
 			label = tok.nextToken();

@@ -179,7 +179,7 @@ class MixInst	{
 			case HLT:
 				switch (f)	{
 					case 0:	// NUM
-						vm.convertToNumeric();
+						vm.convertToNum();
 						break;
 					case 1:	// CHAR
 						vm.convertToChar();
