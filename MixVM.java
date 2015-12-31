@@ -1,3 +1,5 @@
+package com.jdavies.mix;
+
  // character codes:
  // (space)ABCDEFGHI(delta)JKLMNOPQR(sigma)(pi)STUVWXYZ0123456789.,()+-*/=$<>@;:'
 

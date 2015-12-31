@@ -1,3 +1,5 @@
+package com.jdavies.mix;
+
 class MixException extends Exception	{
 	private int location;
 

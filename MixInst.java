@@ -1,3 +1,5 @@
+package com.jdavies.mix;
+
 /**
  * A single MIX words can be compressed into 31 bits (just under a 32-bit
  * integer): six bits per word = 30 bits, plus a single bit for the sign.
@@ -187,7 +189,8 @@ class MixInst	{
 					case 2:	// HLT
 						return false;
 					default:
-						throw new InvalidFError(f);
+						throw new FieldError("Invalid F-specification " + f +
+							" for instruction code " + c + "; expected 0-2");
 				}
 			case SLA:
 				// SLA and SRA do not affect rX; the other shifts affect both A & X as though
@@ -204,9 +207,9 @@ class MixInst	{
 					case 5: // SRC
 						throw new NotImplemented(c);
 					default:
-						throw new InvalidFSpec(f);
+						throw new FieldError("Invalid F-specification " + f +
+							" for instruction code " + c + " (shift); expected 0-5");
 				}
-				break;
 			case MOVE:
 				vm.moveWords(a, f);
 				break;
@@ -273,11 +276,11 @@ class MixInst	{
 					case 7: // JGE
 					case 8: // JNE
 					case 9: // JLE: Jump if the comparison indicator is set.  The comparison indicator is not changed by these instructions.
-						throw NotImplemented(c);
+						throw new NotImplemented(c);
 					default:
-						throw new InvalidFSpec(f);
+						throw new FieldError("Invalid F-specification " + f +
+							" for instruction code " + c + " (jump); expected 0-9");
 				}
-				break;
 			case JAP: 
 			case J1P:
 			case J2P: 
@@ -295,9 +298,9 @@ class MixInst	{
 					case 5: // JrNP register r nonpositive
 					 throw new NotImplemented(c);
 					default:
-						throw new InvalidFSpec(f);
+						throw new FieldError("Invalid F-specification " + f +
+							" for instruction code " + c + " (jump); expected 0-5");
 				}
-				break;
 			case INCA: 
 			case INC1: 
 			case INC2: 
@@ -340,5 +343,9 @@ class MixInst	{
 		}
 
 		return true;
+	}
+
+	public String toString()	{
+		return a + ", " + i + ", " + f + ", " + c;
 	}
 }

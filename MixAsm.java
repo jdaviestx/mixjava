@@ -1,3 +1,5 @@
+package com.jdavies.mix;
+
 import java.io.IOException;
 import java.io.FileReader;
 import java.io.BufferedReader;
@@ -6,12 +8,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-
-class SyntaxException extends Exception	{
-	public SyntaxException(String msg)	{
-		super(msg);
-	}
-}
 
 /**
  * Assemble a plaintext file into an executable MIX program (executable by {@link MixVM}).
@@ -169,12 +165,109 @@ System.out.println(label + ":" + opcode + ":" + address);
 		c = opcodes.get(opcode);
 		// The really hard part here is interpreting the address part of the instruction
 
+		// location[,index][(L[:R])]
+		// TODO W-Expressions
+		// TODO regexp instead?  This is awfully complex...
+		String location = null;
+		String index = null;
+		String L = null;
+		String R = null;
+		if (address != null)	{
+			StringTokenizer addrParser = new StringTokenizer(address, ",():", true);
+
+			location = addrParser.nextToken();
+			if (addrParser.hasMoreTokens())	{
+				String sep = addrParser.nextToken();
+				if (sep.equals(','))	{
+					index = addrParser.nextToken();
+					if (addrParser.hasMoreTokens())	{
+						sep = addrParser.nextToken();
+					} else	{
+						sep = null;
+					}
+				}
+				if (sep != null && sep.equals('('))	{	// must be a , or a (
+					L = addrParser.nextToken();
+					if (!addrParser.hasMoreTokens())	{
+						throw new SyntaxException("Unexpected end of expression in '" +
+							address + "'");
+					}
+					sep = addrParser.nextToken();
+					if (sep.equals(':'))	{
+						R = addrParser.nextToken();
+						if (!addrParser.hasMoreTokens())	{
+							throw new SyntaxException("Unexpected end of expression in '" +
+								address + "'");
+						}
+						sep = addrParser.nextToken();
+					}
+					if (!sep.equals(')'))	{
+						throw new SyntaxException("Expected ')', got '" + sep + "'");
+					}
+				} else	{
+					throw new SyntaxException("Expected '(', got '" + sep + "')");
+				}
+			}
+		}
+
+		int ilocation = 0;
+		int iindex = 0;
+		int iL = 0;
+		int iR = 5;
+
+		try	{
+			ilocation = Integer.parseInt(location);
+		} catch (NumberFormatException e)	{
+			if (symbolTable.get(location) != null)	{
+				ilocation = symbolTable.get(location);
+			} else	{
+				// TODO record a forward reference
+			}
+		}
+
+		if (index != null)	{
+			try	{
+				iindex = Integer.parseInt(index);
+			} catch (NumberFormatException e)	{
+				throw new SyntaxException("Non-numeric index '" + index + "'");
+			}
+		}
+
+		if (L != null)	{
+			try	{
+				iL = Integer.parseInt(L);
+			} catch (NumberFormatException e)	{
+				throw new SyntaxException("Non-numeric L '" + L + "'");
+			}
+
+			if (R == null)	{	// if there's only one value, it's R, not L
+				iR = iL;
+				iL = 0;
+			}
+		}
+
+		if (R != null)	{
+			try	{
+				iR = Integer.parseInt(R);
+			} catch (NumberFormatException e)	{
+				throw new SyntaxException("Non-numeric R '" + R + "'");
+			}
+		}
+
 		if (c > 63)	{
 			// Handle psuedo-operations: e.g. assembler instructions
 			if ("ORIG".equals(opcode))	{
+				pc = ilocation;
 			}
 		} else	{
 			// Actually assemble something
+			// TODO correct F-spec defaults for non-load/store instructions.
+
+			MixInst inst = new MixInst(MixOpCode.values()[c], ilocation, iindex,
+				iL, iR);
+System.out.println(pc + ": " + inst.toString());
+			memory[pc] = inst.pack();
+			pc++;
 		}
 	}
 
@@ -191,7 +284,7 @@ System.out.println(label + ":" + opcode + ":" + address);
 			try	{
 				assembleLine(line);
 			} catch (SyntaxException e)	{
-				System.out.print("At line " + lineCounter + ": ");
+				System.out.print("At line " + lineCounter + ", input '" +  line + "': ");
 				e.printStackTrace();
 			}
 		}

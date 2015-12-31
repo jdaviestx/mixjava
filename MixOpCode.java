@@ -1,3 +1,5 @@
+package com.jdavies.mix;
+
 /**
  * ADD, SUB, all LOAD and STORE (including STZ), all SHIFT and all comparison operations take 
  * two units of time.  MOVE requires one unit plus two for each word moved.  MUL, NUM, CHAR

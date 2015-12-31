@@ -1,3 +1,5 @@
+package com.jdavies.mix;
+
 public class MixVMTest	{
 	public static boolean assertEquals(int a, int b)	{
 		if (a != b)	{

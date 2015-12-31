@@ -1,3 +1,3 @@
 #!/bin/sh
 
-java -classpath classes MixAsm $*
+java -classpath classes com.jdavies.mix.MixAsm $*

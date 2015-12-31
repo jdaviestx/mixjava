@@ -1,3 +1,5 @@
+package com.jdavies.mix;
+
 class FieldError extends MixException	{
 	private String msg;
 

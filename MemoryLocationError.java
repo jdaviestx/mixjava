@@ -1,3 +1,5 @@
+package com.jdavies.mix;
+
 class MemoryLocationError extends MixException	{
 	private String msg;
 

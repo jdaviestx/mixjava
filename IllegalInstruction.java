@@ -1,3 +1,5 @@
+package com.jdavies.mix;
+
 class IllegalInstruction extends MixException	{
 	private String msg;
 
