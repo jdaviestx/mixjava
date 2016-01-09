@@ -37,6 +37,84 @@ class MixInstSpec	{
 
 /**
  * Assemble a plaintext file into an executable MIX program (executable by {@link MixVM}).
+ *
+ * 1. A "symbol" is a string of one to ten letters and/or digist, containing at least one
+ * letter.  The special symbols dH, dF and dB, where d is a single digit, will be replaced
+ * by other unique symbols according to the "local symbol" convention.
+ * 2. A "number" is a string of one to ten digits.
+ * 3. Each appearance of a symbol in a MIXAL program is said to be either a "defined symbol"
+ * or a "future reference".  A defined symbol has appeared in the LOC field of a preceding
+ * line.  A future reference is a symbol that has not yet been defined.
+ * 4. An atomic expression is either
+ * a) a number
+ * b) a defined symbol
+ * c) an asterisk
+ * 5. An expression is either
+ * a) an atomic expression
+ * b) a plus or minus sign followed by an atomic expression
+ * c) an expression followed by a binary operation followed by an atomic expression.
+ * The six admissible binary operations are +, -, *, /, // and :.  They are defined as:
+ * C = A+B   LDA AA; ADD BB; STA CC
+ * C = A-B   LDA AA; SUB BB; STA CC
+ * C = A*B	 LDA AA; MUL BB; STX CC
+ * C = A/B	 LDA AA; SRAX 5; DIV BB; STA CC
+ * C = A//B	 LDA AA; ENTX 0; DIV BB; STA CC
+ * C = A:B	 LDA AA; MUL =8=; SLAX 5; ADD BB; STA CC
+ * Operations within an expression are carried out left-to-right.
+ * 6. An A-part (used to describe an address) is either:
+ * a) vacuous (denoting the value 0)
+ * b) an expression
+ * c) a future reference
+ * d) a literal constant
+ * 7. An index part is either:
+ * a) vacuous (denoting the value 0)
+ * b) a comma followed by an expression (denoting the value of that expression).
+ * 8. An F-part is either:
+ * a) vacuous (denoting the normal F-setting)
+ * b) a left-parenthesis followed by an expression followed by a right parenthesis).
+ * 9. A W-value is either:
+ * a) an expression follwoed by an F-part
+ * b) a W-value followed by a comma followed by a W-value
+ * A W-value denotes the value of a numeric MIX word determined as follows:
+ * E1(F1),E2(F2),...En(Fn) where n >= 1
+ * Es are expressions, F's are fields:
+ * STZ WVAL; LDA C1; STA WVAL(F1);...;LDA Cn;STA WVAL(Fn)
+ * Where C1,...Cn denote locations containing the values of expressions E1...En.
+ * 1						is the word		+ 0 0 0 0 1
+ * 1,-1000(0:2)	is the word   - 1000 0 0 1
+ * -1000(0:2),1 is the word   + 0 0 0 0 1
+ * 10. * is the location counter.  It should always be a nonnegative number that
+ * can fit in two bytes.  When the location field of a line is not blank, it must
+ * contain a symbol that has not previously been defined.  The equivalent of that
+ * symbol is then defined to be the current value of *.
+ * 11. After processing the LOC field as described in rule 10, the assembly process
+ * depends on the value of the OP field:
+ * a) OP is a MIX operator.  The ADDRESS should be an A-part (rule 6), followed by
+ * an index part (rule 7), followed by an F-part (rule 8):
+ * LDA C; STA WORD; LDA F; STA WORD(4:4); LDA I; STA WORD(3:3); LDA A; STA WORD(0:2) into
+ * *, increment * by 1.
+ * b) OP is "EQU".  The ADDRESS should be a W-value (rule 9).  If the LOC field is non-blank,
+ * the equivalent of the symbol appearing there is set to the value specified in ADDRESS.  The
+ * value of * is unchanged.
+ * c) OP is "ORIG".  The ADDRESS should be a W-value (rule 9); the location counter, *, is
+ * set to this value.  (Because of rule 10, a symbol appearing in the LOC field of an ORIG line 
+ * gets as its equivalent the value of * before it has changed.  For example:
+ * TABLE	ORIG	*+100
+ * sets the equivalent of TABLE to the first of 100 locations).
+ * d) OP is "CON".  The ADDRESS should be a W-value; assemble a word, having this value, into
+ * the location specified by * and advance * by 1.
+ * e) OP is "ALF".  Assemble the word of character codes formed by the first five characters
+ * of the address field, otherwise behaving like CON.
+ * f) OP is "END".  The ADDRESS should be a W-value, which specifies in its (4:5) field the 
+ * location of the instruction at which the program begins.  The END line signals the end of
+ * a MIXAL program.  Additional lines are inserted corresponding to all undefined symbols and
+ * literal constants (rules 12 &amp; 13).  A symbol in the LOC field of the END line will
+ * denote the first location following the inserted words.
+ * 12. A W-value that is less than 10 characters long may be enclosed within "=" signs and
+ * used as a future reference.
+ * 13. Every symbol has one and only one equivalent value.  If the symbol never appears in
+ * LOC a new line is effectively inserted before the END line, having OP = "CON" and
+ * ADDRESS = "0" and the name of the symbol in LOC.
  */
 public class MixAsm	{
 	/**
@@ -259,6 +337,21 @@ public class MixAsm	{
 	 * The opcode MUST be preceded by whitespace or a label, and the address part is usually
 	 * required, but for instructions like HLT it isn't.  opcodes can be pseudo-ops like EQU,
 	 * CON, ALF or ORIG as well.
+	 *
+	 * pg. 152:
+	 * columns 1-10 LOC field
+	 * columns 12-15 OP field
+	 * columns 17-80 address field and optional remarks
+	 * columns 11,16 blank
+	 * If column 1 contains an asterisk, the entire card is treated as a comment.  The
+	 * ADDRESS field ends with the first blank column following column 16 (exception: when
+	 * the OP field is ALF, the remarks always start in column 22).
+	 *
+	 * From a terminal, the LOC field ends with the first blank space, while the OP and ADDRESS
+	 * fields (if present) begin with a non-blank character and continue to the next blank.
+	 * The pseudo-op code ALF is, however, followed either by two blank spaces and five
+	 * characters of alphanumeric data, or by a single blank space and give alphanumeric
+	 * characters, the first of which is nonblank.
 	 */
 	private void assembleLine(String line) throws SyntaxException	{
 		StringTokenizer tok = new StringTokenizer(line, " \t");

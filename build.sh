@@ -1,4 +1,4 @@
 #!/bin/sh
 
 mkdir -p classes
-javac -d classes *.java
+javac -d classes src/com/jdavies/mix/*.java
