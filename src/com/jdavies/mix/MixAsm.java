@@ -122,6 +122,9 @@ public class MixAsm	{
 	 * opcodes map onto a single value (like JAP/JP, ENTA/INCA).
 	 */
 	private static Map<String, MixInstSpec> opcodes = new HashMap<String, MixInstSpec>();
+	// Whenever a forward reference ("future expression") its location is recorded here
+	// and resolved at the very end
+	private static Map<String, List<Integer>> forwardReferences = new HashMap<String, List<Integer>>();
 
 	static	{
 		// C	t	 L	R
@@ -299,12 +302,13 @@ public class MixAsm	{
 	 */
 	private int parseLocation(String location)	{
 		int ilocation = 0;
-		StringTokenizer locationParser = new StringTokenizer(location, "+-", true);
+		StringTokenizer locationParser = new StringTokenizer(location, "+-*/:", true);
 
+		int i = 0;
 		while (locationParser.hasMoreTokens())	{
 			String token = locationParser.nextToken();
 			if ("*".equals(token))	{
-				location += this.pc;
+				ilocation += this.pc;
 			} else if ("+".equals(token))	{
 				// TODO
 			}
@@ -319,7 +323,12 @@ public class MixAsm	{
 				if (symbolTable.get(location) != null)	{
 					ilocation = symbolTable.get(location);
 				} else	{
-					// TODO record a forward reference
+					List<Integer> forwardReferenceList = forwardReferences.get(location);
+					if (forwardReferenceList == null)	{
+						forwardReferenceList = new ArrayList<Integer>();
+						forwardReferences.put(location, forwardReferenceList);
+					}
+					forwardReferenceList.add(pc);
 				}
 			}
 		}
@@ -494,6 +503,41 @@ System.out.println(pc + ": " + inst.toString());
 		}
 	}
 
+	/**
+	 * Unresolved symbols are accumulated during the assembly process and resolved
+	 * at the end.  Any remaining unresolved symbols are defined at the last minute;
+	 * MIXAL does not permit additional arithmetic on forward references (although,
+	 * honestly, it wouldn't be hard to support here).
+	 */
+	private void resolveForwardReferences()	{
+System.out.println("Remaining forward references:");
+		for (String key : forwardReferences.keySet())	{
+			// First, see if this symbol was ultimately defined.
+			if (symbolTable.get(key) == null)	{
+				// If not, define it at the tail end of the program, just before "END".
+				System.err.println("Warning: undefined symbol '" + key + "'");
+				symbolTable.put(key, pc++);
+			}
+			int symbolValue = symbolTable.get(key);
+System.out.print(key + "(" + symbolValue + "): ");
+			List<Integer> references = forwardReferences.get(key);
+			// Update each reference to the memory location defined by the forward symbol.
+			// Forward symbols can ONLY be used to refer to memory locations, so the change
+			// is always to mem[pc](0:2).
+			for (Integer ref : references)	{
+System.out.println(ref + ", ");
+				// TODO deal with negatives
+				mem[ref] |= (symbolValue << 18);
+try	{
+	MixInst inst = new MixInst(mem[ref]);
+	System.out.println(ref + ": " + inst.toString());
+} catch (Exception e)	{
+	e.printStackTrace();
+}
+			}
+		}
+	}
+
 	public boolean assemble(BufferedReader in) throws IOException	{
 		int lineCounter = 0;	// different than program counter
 		String line;
@@ -501,6 +545,8 @@ System.out.println(pc + ": " + inst.toString());
 		boolean succeeded = true;
 		while ((line = in.readLine()) != null)	{
 			lineCounter++;
+System.out.println();
+System.out.println(lineCounter + ": " + line);
 			if ((line.charAt(0) == '*') || line.trim().length() == 0)	{
 				// Skip blank or comment lines
 				continue;
@@ -513,6 +559,7 @@ System.out.println(pc + ": " + inst.toString());
 				succeeded = false;
 			}
 		}
+		resolveForwardReferences();
 
 		return succeeded;
 	}
@@ -538,11 +585,13 @@ System.out.println(pc + ": " + inst.toString());
 
 		MixAsm assembler = new MixAsm();
 		if (assembler.assemble(new BufferedReader(new FileReader(args[0]))))	{
+			/*
 			try	{
 				assembler.run();
 			} catch (MixException e)	{
 				e.printStackTrace();
 			}
+			*/
 		}
 	}
 }
